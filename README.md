@@ -9,19 +9,19 @@
 
 ## Configuration
 - **nodes**: nodes (array, required)
-  - **host**: host (string, required, default: ``)
-  - **port**: port (integer, required, default: ``)
-- **queries**: query (array, required, default: ``)
-- **index**: index (string, required, default: ``)
-- **index_type**: index_type (string, default: ``)
-- **request_timeout**: request_timeout (string, default: ``)
+  - **host**: host (string, required)
+  - **port**: port (integer, required)
+- **queries**: query (array, required)
+- **index**: index (string, required)
+- **index_type**: index_type (string)
+- **request_timeout**: request_timeout (integer)
 - **per_size**: per_size (integer, required, default: `1000`)
 - **limit_size**: limit_size (integer, default: unlimit)
-- **fields**: fields (string, required, default: ``)
-  - **name**: name (string, required, default: ``)
-  - **type**: type (string, required, default: ``)
-  - **metadata**: metadata (boolean, required, default: ``)
-  - **time_format**: time_format (string, required, default: ``)
+- **fields**: fields (array, required)
+  - **name**: name (string, required)
+  - **type**: type (string, required)
+  - **metadata**: metadata (boolean, default: false)
+  - **time_format**: time_format (string, required)
 
 ## Example
 

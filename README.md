@@ -39,7 +39,7 @@ in:
   request_timeout: 60
   per_size: 1000
   limit_size: 200000
-  num_threads: 4
+  num_threads: 2
   fields:
     - { name: _id, type: string, metadata: true }
     - { name: _type, type: string, metadata: true }

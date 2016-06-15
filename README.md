@@ -17,6 +17,7 @@
 - **request_timeout**: request_timeout (integer)
 - **per_size**: per_size (integer, required, default: `1000`)
 - **limit_size**: limit_size (integer, default: unlimit)
+- **num_threads**: number of threads for queries. (integer, default: 1)
 - **fields**: fields (array, required)
   - **name**: name (string, required)
   - **type**: type (string, required)
@@ -38,6 +39,7 @@ in:
   request_timeout: 60
   per_size: 1000
   limit_size: 200000
+  num_threads: 4
   fields:
     - { name: _id, type: string, metadata: true }
     - { name: _type, type: string, metadata: true }

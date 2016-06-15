@@ -1,10 +1,10 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "embulk-input-elasticsearch"
-  spec.version       = "0.1.0"
+  spec.version       = "0.2.0"
   spec.authors       = ["toyama0919"]
   spec.summary       = "Elasticsearch input plugin for Embulk"
-  spec.description   = "Loads records from Elasticsearch."
+  spec.description   = "Loads records from Elasticsearch. parallel query support."
   spec.email         = ["toyama0919@gmail.com"]
   spec.licenses      = ["MIT"]
   spec.homepage      = "https://github.com/toyama0919/embulk-input-elasticsearch"

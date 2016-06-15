@@ -7,10 +7,6 @@ Elasticsearch = Embulk::Input::Elasticsearch
 module Embulk
   class Input::Elasticsearch
     class TestTransaction < Test::Unit::TestCase
-      def least_config
-        DataSource.new({})
-      end
-
       def control
         Proc.new {|task| task_reports = [] }
       end

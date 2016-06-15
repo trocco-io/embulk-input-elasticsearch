@@ -1,4 +1,4 @@
-# Elasticsearch input plugin for Embulk
+# Elasticsearch input plugin for Embulk [![Build Status](https://secure.travis-ci.org/toyama0919/embulk-input-elasticsearch.png?branch=master)](http://travis-ci.org/toyama0919/embulk-input-elasticsearch)
 
 ## Overview
 

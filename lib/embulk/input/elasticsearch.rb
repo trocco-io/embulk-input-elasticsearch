@@ -20,7 +20,8 @@ module Embulk
           "limit_size" => config.param("limit_size", :integer, default: nil),
           "fields" => config.param("fields", :array, default: nil),
           "queries" => config.param("queries", :array),
-          "sort" => config.param("sort", :hash, default: nil)
+          "sort" => config.param("sort", :hash, default: nil),
+          "add_query_to_record" => config.param("add_query_to_record", :bool, default: false)
         }
         # TODO: want max_threads
         define_num_threads = config.param("num_threads", :integer, default: 1)
@@ -30,6 +31,9 @@ module Embulk
         task['fields'].each_with_index{ |field, i|
           columns << Column.new(i, field['name'], field['type'].to_sym)
         }
+        if task['add_query_to_record']
+          columns << Column.new(task['fields'].size, "query", :string)
+        end
 
         resume(task, columns, task['slice_queries'].size, &control)
       end
@@ -81,6 +85,7 @@ module Embulk
         @limit_size = task['limit_size']
         @fields = task['fields']
         @sort = task['sort']
+        @add_query_to_record = task['add_query_to_record']
       end
 
       def run
@@ -96,6 +101,9 @@ module Embulk
 
             results = get_sources(search(@index_type, query, size, now_results_size, @routing, @fields, @sort), @fields)
             results.each do |record|
+              if @add_query_to_record
+                record << query
+              end
               page_builder.add(record)
             end
             break if last_query?(next_results_size ,total_count)

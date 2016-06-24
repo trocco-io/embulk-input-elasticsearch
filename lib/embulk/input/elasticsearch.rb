@@ -1,5 +1,7 @@
 require 'excon'
 require 'elasticsearch'
+require_relative 'elasticsearch/connection'
+require_relative 'elasticsearch/input_thread'
 
 module Embulk
   module Input
@@ -26,7 +28,7 @@ module Embulk
         }
         # TODO: want max_threads
         define_num_threads = config.param("num_threads", :integer, default: 1)
-        task['slice_queries'] = get_slice_from_num_threads(task['queries'], define_num_threads)
+        task['slice_queries'] = InputThread.get_slice_from_num_threads(task['queries'], define_num_threads)
 
         columns = []
         task['fields'].each_with_index{ |field, i|
@@ -39,18 +41,6 @@ module Embulk
         resume(task, columns, task['slice_queries'].size, &control)
       end
 
-      def self.get_slice_from_num_threads(array, define_num_threads)
-        num_threads = array.size < define_num_threads ? array.size : define_num_threads
-        per_queries = if (array.size % num_threads) == 0
-          (array.size / num_threads)
-        else
-          (array.size / num_threads) + 1
-        end
-        sliced = array.each_slice(per_queries).to_a
-        Embulk.logger.info("calculate num threads => #{sliced.size}")
-        return sliced
-      end
-
       def self.resume(task, columns, count, &control)
         task_reports = yield(task, columns, count)
 
@@ -58,28 +48,10 @@ module Embulk
         return next_config_diff
       end
 
-      def self.create_client(task)
-        transport = ::Elasticsearch::Transport::Transport::HTTP::Faraday.new(
-          {
-            hosts: task['nodes'].map{ |node| Hash[node.map{ |k, v| [k.to_sym, v] }] },
-            options: {
-              reload_connections: task['reload_connections'],
-              reload_on_failure: task['reload_on_failure'],
-              retry_on_failure: task['retry_on_failure'],
-              transport_options: {
-                request: { timeout: task['request_timeout'] }
-              }
-            }
-          }
-        )
-
-        ::Elasticsearch::Client.new transport: transport
-      end
-
       def init
         @queries = task['slice_queries'][@index]
         Embulk.logger.info("this thread queries => #{@queries}")
-        @client = self.class.create_client(task)
+        @client = Connection.create_client(task)
         @index_name = task['index']
         @index_type = task['index_type']
         @per_size = task['per_size']

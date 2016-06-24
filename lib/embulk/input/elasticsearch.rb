@@ -6,6 +6,7 @@ module Embulk
 
     class Elasticsearch < InputPlugin
       Plugin.register_input("elasticsearch", self)
+      ADD_QUERY_TO_RECORD_KEY = 'query'
 
       def self.transaction(config, &control)
         task = {
@@ -32,7 +33,7 @@ module Embulk
           columns << Column.new(i, field['name'], field['type'].to_sym)
         }
         if task['add_query_to_record']
-          columns << Column.new(task['fields'].size, "query", :string)
+          columns << Column.new(task['fields'].size, ADD_QUERY_TO_RECORD_KEY, :string)
         end
 
         resume(task, columns, task['slice_queries'].size, &control)
@@ -89,27 +90,7 @@ module Embulk
       end
 
       def run
-        @queries.each do |query|
-          query_count = 0
-          no_source_results = search(@index_type, query, 0, 0, @routing, @fields, @sort)
-          total_count = [no_source_results['hits']['total'], @limit_size].compact.min
-          while true
-            now_results_size = query_count * @per_size
-            next_results_size = (query_count + 1) * @per_size
-            size = get_size(next_results_size, now_results_size ,total_count)
-            break if size == 0
-
-            results = get_sources(search(@index_type, query, size, now_results_size, @routing, @fields, @sort), @fields)
-            results.each do |record|
-              if @add_query_to_record
-                record << query
-              end
-              page_builder.add(record)
-            end
-            break if last_query?(next_results_size ,total_count)
-            query_count += 1
-          end
-        end
+        search(@index_type, @per_size, @routing, @fields, @sort)
         page_builder.finish
 
         task_report = {}
@@ -117,6 +98,67 @@ module Embulk
       end
 
       private
+
+      def search(type, size, routing, fields, sort)
+        @queries.each do |query|
+          search_with_query(query, type, size, routing, fields, sort)
+        end
+      end
+
+      def search_with_query(query, type, size, routing, fields, sort)
+        search_option = get_search_option(type, query, size, fields, sort)
+        Embulk.logger.info("#{search_option}")
+        r = @client.search(search_option)
+        i = 0
+        get_sources(r, fields).each do |result|
+          result_proc(result, query)
+          return if @limit_size == (i += 1)
+        end
+
+        while r = @client.scroll(scroll_id: r['_scroll_id'], scroll: '1m') and (not r['hits']['hits'].empty?) do
+          get_sources(r, fields).each do |result|
+            result_proc(result, query)
+            return if @limit_size == (i += 1)
+          end
+        end
+      end
+
+      def result_proc(result, query)
+        if @add_query_to_record
+          result << query
+        end
+        page_builder.add(result)
+      end
+
+      def get_search_option(type, query, size, fields, sort)
+        body = { }
+        body[:query] = { query_string: { query: query } } unless query.nil?
+        if sort
+          sorts = []
+          sort.each do |k, v|
+            sorts << { k => v }
+          end
+          body[:sort] = sorts
+        else
+          body[:sort] = ["_doc"]
+        end
+        search_option = { index: @index_name, type: type, scroll: '1m', body: body, size: size }
+        search_option[:_source] = fields.select{ |field| !field['metadata'] }.map { |field| field['name'] }.join(',')
+        search_option
+      end
+
+      def get_sources(results, fields)
+        hits = results['hits']['hits']
+        hits.map { |hit|
+          result = hit['_source']
+          fields.select{ |field| field['metadata'] }.each { |field|
+            result[field['name']] = hit[field['name']]
+          }
+          @fields.map { |field|
+            convert_value(result[field['name']], field)
+          }
+        }
+      end
 
       def convert_value(value, field)
         return nil if value.nil?
@@ -147,49 +189,6 @@ module Embulk
         else
           raise "Unsupported type #{field['type']}"
         end
-      end
-
-      def get_size(next_results_size, now_results_size ,total_count)
-        if last_query?(next_results_size ,total_count)
-          (total_count - now_results_size)
-        else
-          @per_size
-        end
-      end
-
-      def last_query?(next_results_size ,total_count)
-        next_results_size > total_count
-      end
-
-      def search(type, query, size, from, routing, fields, sort)
-        body = { from: from }
-        body[:size] = size unless size.nil?
-        if sort
-          sorts = []
-          sort.each do |k, v|
-            sorts << { k => v }
-          end
-          body[:sort] = sorts
-        end
-        body[:query] = { query_string: { query: query } } unless query.nil?
-        search_option = { index: @index_name, type: type, body: body }
-        search_option[:routing] = routing unless routing.nil?
-        search_option[:_source] = fields.select{ |field| !field['metadata'] }.map { |field| field['name'] }.join(',')
-        Embulk.logger.info(%Q{search_option => #{search_option}})
-        @client.search(search_option)
-      end
-
-      def get_sources(results, fields)
-        hits = results['hits']['hits']
-        hits.map { |hit|
-          result = hit['_source']
-          fields.select{ |field| field['metadata'] }.each { |field|
-            result[field['name']] = hit[field['name']]
-          }
-          @fields.map { |field|
-            convert_value(result[field['name']], field)
-          }
-        }
       end
     end
   end

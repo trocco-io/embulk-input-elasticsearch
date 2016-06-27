@@ -24,7 +24,8 @@ module Embulk
           "fields" => config.param("fields", :array, default: nil),
           "queries" => config.param("queries", :array),
           "sort" => config.param("sort", :hash, default: nil),
-          "add_query_to_record" => config.param("add_query_to_record", :bool, default: false)
+          "add_query_to_record" => config.param("add_query_to_record", :bool, default: false),
+          "scroll" => config.param("scroll", :string, default: '1m')
         }
         # TODO: want max_threads
         define_num_threads = config.param("num_threads", :integer, default: 1)
@@ -59,6 +60,7 @@ module Embulk
         @fields = task['fields']
         @sort = task['sort']
         @add_query_to_record = task['add_query_to_record']
+        @scroll = task['scroll']
       end
 
       def run
@@ -87,7 +89,7 @@ module Embulk
           return if @limit_size == (i += 1)
         end
 
-        while r = @client.scroll(scroll_id: r['_scroll_id'], scroll: '1m') and (not r['hits']['hits'].empty?) do
+        while r = @client.scroll(scroll_id: r['_scroll_id'], scroll: @scroll) and (not r['hits']['hits'].empty?) do
           get_sources(r, fields).each do |result|
             result_proc(result, query)
             return if @limit_size == (i += 1)
@@ -114,7 +116,7 @@ module Embulk
         else
           body[:sort] = ["_doc"]
         end
-        search_option = { index: @index_name, type: type, scroll: '1m', body: body, size: size }
+        search_option = { index: @index_name, type: type, scroll: @scroll, body: body, size: size }
         search_option[:_source] = fields.select{ |field| !field['metadata'] }.map { |field| field['name'] }.join(',')
         search_option
       end

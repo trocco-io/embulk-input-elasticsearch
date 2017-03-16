@@ -61,6 +61,7 @@ module Embulk
         @sort = task['sort']
         @add_query_to_record = task['add_query_to_record']
         @scroll = task['scroll']
+        @retry_on_failure = task['retry_on_failure']
       end
 
       def run
@@ -82,18 +83,34 @@ module Embulk
       def search_with_query(query, type, size, routing, fields, sort)
         search_option = get_search_option(type, query, size, fields, sort)
         Embulk.logger.info("#{search_option}")
-        r = @client.search(search_option)
+        r = search_with_retry { @client.search(search_option) }
         i = 0
         get_sources(r, fields).each do |result|
           result_proc(result, query)
           return if @limit_size == (i += 1)
         end
 
-        while r = @client.scroll(scroll_id: r['_scroll_id'], scroll: @scroll) and (not r['hits']['hits'].empty?) do
+        while r = (search_with_retry { @client.scroll(scroll_id: r['_scroll_id'], scroll: @scroll) }) and (not r['hits']['hits'].empty?) do
           get_sources(r, fields).each do |result|
             result_proc(result, query)
             return if @limit_size == (i += 1)
           end
+        end
+      end
+
+      def search_with_retry
+        retries = 0
+        begin
+          yield if block_given?
+        rescue => e
+          if retries < @retry_on_failure
+            retries += 1
+            Embulk.logger.warn "Could not search to Elasticsearch, resetting connection and trying again. #{e.message}"
+            sleep 2**retries
+            retry
+          end
+          Embulk.logger.error "Could not search to Elasticsearch after #{retries} retries. #{e.message}"
+          raise
         end
       end
 

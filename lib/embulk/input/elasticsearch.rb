@@ -2,6 +2,7 @@ require 'excon'
 require 'elasticsearch'
 require_relative 'elasticsearch/connection'
 require_relative 'elasticsearch/input_thread'
+require_relative 'elasticsearch/converter'
 
 module Embulk
   module Input
@@ -85,13 +86,13 @@ module Embulk
         Embulk.logger.info("#{search_option}")
         r = search_with_retry { @client.search(search_option) }
         i = 0
-        get_sources(r, fields).each do |result|
+        Converter.get_sources(r, fields).each do |result|
           result_proc(result, query)
           return if @limit_size == (i += 1)
         end
 
         while r = (search_with_retry { @client.scroll(scroll_id: r['_scroll_id'], scroll: @scroll) }) and (not r['hits']['hits'].empty?) do
-          get_sources(r, fields).each do |result|
+          Converter.get_sources(r, fields).each do |result|
             result_proc(result, query)
             return if @limit_size == (i += 1)
           end
@@ -136,50 +137,6 @@ module Embulk
         search_option = { index: @index_name, type: type, scroll: @scroll, body: body, size: size }
         search_option[:_source] = fields.select{ |field| !field['metadata'] }.map { |field| field['name'] }.join(',')
         search_option
-      end
-
-      def get_sources(results, fields)
-        hits = results['hits']['hits']
-        hits.map { |hit|
-          result = hit['_source']
-          fields.select{ |field| field['metadata'] }.each { |field|
-            result[field['name']] = hit[field['name']]
-          }
-          @fields.map { |field|
-            convert_value(result[field['name']], field)
-          }
-        }
-      end
-
-      def convert_value(value, field)
-        return nil if value.nil?
-        case field["type"]
-        when "string"
-          value
-        when "long"
-          value.to_i
-        when "double"
-          value.to_f
-        when "boolean"
-          if value.is_a?(TrueClass) || value.is_a?(FalseClass)
-            value
-          else
-            downcased_val = value.downcase
-            case downcased_val
-            when 'true' then true
-            when 'false' then false
-            when '1' then true
-            when '0' then false
-            else nil
-            end
-          end
-        when "timestamp"
-          Time.parse(value)
-        when "json"
-          value
-        else
-          raise "Unsupported type #{field['type']}"
-        end
       end
     end
   end

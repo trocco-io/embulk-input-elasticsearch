@@ -59,6 +59,8 @@ module Embulk
           end
         end
 
+        private
+
         def search_with_retry
           retries = 0
           begin

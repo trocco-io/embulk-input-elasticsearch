@@ -9,3 +9,5 @@ Embulk.logger = Embulk::Logger.new('/dev/null')
 
 APP_ROOT = File.expand_path('../', __dir__)
 TEST_ROOT = File.expand_path(File.dirname(__FILE__))
+
+require 'embulk/input/elasticsearch'

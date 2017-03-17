@@ -6,11 +6,9 @@ module Embulk
           hits = results['hits']['hits']
           hits.map { |hit|
             result = hit['_source']
-            fields.select{ |field| field['metadata'] }.each { |field|
-              result[field['name']] = hit[field['name']]
-            }
             fields.map { |field|
-              convert_value(result[field['name']], field)
+              value = field['metadata'] ? hit[field['name']] : result[field['name']]
+              convert_value(value, field)
             }
           }
         end

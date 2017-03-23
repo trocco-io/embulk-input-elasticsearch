@@ -19,6 +19,8 @@
 - **limit_size**: limit size unit query. (integer, default: unlimit)
 - **num_threads**: number of threads for queries. (integer, default: 1)
 - **retry_on_failure**: retry on failure. set 0 is retry forever. (integer, default: 5)
+- **sort**: sort order. (hash, default: nil)
+- **scroll**: scroll. to keep the search context. (string, default: '1m')
 - **fields**: fields (array, required)
   - **name**: name (string, required)
   - **type**: type (string, required)
@@ -41,6 +43,9 @@ in:
   per_size: 1000
   limit_size: 200000
   num_threads: 2
+  sort:
+    m_corporation_id: desc
+    employee_range: asc
   fields:
     - { name: _id, type: string, metadata: true }
     - { name: _type, type: string, metadata: true }

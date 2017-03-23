@@ -1,4 +1,4 @@
-# Elasticsearch input plugin for Embulk [![Build Status](https://secure.travis-ci.org/toyama0919/embulk-input-elasticsearch.png?branch=master)](http://travis-ci.org/toyama0919/embulk-input-elasticsearch)
+# Elasticsearch input plugin for Embulk [![Build Status](https://secure.travis-ci.org/toyama0919/embulk-input-elasticsearch.png?branch=master)](http://travis-ci.org/toyama0919/embulk-input-elasticsearch) [![Gem Version](https://badge.fury.io/rb/embulk-input-elasticsearch.svg)](http://badge.fury.io/rb/embulk-input-elasticsearch)
 
 ## Overview
 
@@ -11,18 +11,19 @@
 - **nodes**: nodes (array, required)
   - **host**: host (string, required)
   - **port**: port (integer, required)
-- **queries**: query (array, required)
+- **queries**: lucene query array. (array, required)
 - **index**: index (string, required)
 - **index_type**: index_type (string)
-- **request_timeout**: request_timeout (integer)
-- **per_size**: per_size (integer, required, default: `1000`)
-- **limit_size**: limit_size (integer, default: unlimit)
+- **request_timeout**: request timeout (integer)
+- **per_size**: per size query. (integer, required, default: `1000`)
+- **limit_size**: limit size unit query. (integer, default: unlimit)
 - **num_threads**: number of threads for queries. (integer, default: 1)
+- **retry_on_failure**: retry on failure. set 0 is retry forever. (integer, default: 5)
 - **fields**: fields (array, required)
   - **name**: name (string, required)
   - **type**: type (string, required)
   - **metadata**: metadata (boolean, default: false)
-  - **time_format**: time_format (string, required)
+  - **time_format**: time_format (string)
 
 ## Example
 

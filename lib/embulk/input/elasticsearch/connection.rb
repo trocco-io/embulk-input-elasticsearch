@@ -66,7 +66,7 @@ module Embulk
           begin
             yield if block_given?
           rescue => e
-            if retries < @retry_on_failure
+            if (@retry_on_failure == 0 || retries < @retry_on_failure)
               retries += 1
               Embulk.logger.warn "Could not search to Elasticsearch, resetting connection and trying again. #{e.message}"
               sleep 2**retries

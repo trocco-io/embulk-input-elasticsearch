@@ -45,6 +45,7 @@ module Embulk
           search_option = get_search_option(query)
           Embulk.logger.info("#{search_option}")
           r = search_with_retry { @client.search(search_option) }
+          return if r.nil?
           i = 0
           Converter.get_sources(r, @fields).each do |result|
             yield(result) if block_given?
@@ -73,7 +74,7 @@ module Embulk
               retry
             end
             Embulk.logger.error "Could not search to Elasticsearch after #{retries} retries. #{e.message}"
-            raise
+            return nil
           end
         end
 

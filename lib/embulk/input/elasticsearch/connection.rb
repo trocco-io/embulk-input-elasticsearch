@@ -73,8 +73,8 @@ module Embulk
               sleep 2**retries
               retry
             end
-            Embulk.logger.error "Could not search to Elasticsearch after #{retries} retries. #{e.message}"
-            return nil
+            msg = "Could not search to Elasticsearch after #{retries} retries. #{e.message}"
+            raise Elasticsearch::ConfigError(e, msg)
           end
         end
 

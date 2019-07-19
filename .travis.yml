@@ -1,4 +1,5 @@
 language: ruby
+install: ./embulk.jar bundle install --path vendor/bundle
 matrix:
   include:
     - env: EMBULK_VERSION=0.9.15
@@ -13,5 +14,4 @@ before_install:
   - curl -o embulk.jar --create-dirs -L "http://dl.embulk.org/embulk-${EMBULK_VERSION}.jar"
   - chmod +x embulk.jar
   - ./embulk.jar gem install bundler
-  - ./embulk.jar bundle install --path vendor/bundle
 script: ./embulk.jar bundle exec rake test

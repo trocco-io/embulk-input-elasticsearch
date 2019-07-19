@@ -4,7 +4,13 @@ require 'test/unit'
 
 # require 'embulk/java/bootstrap'
 require 'embulk'
-Embulk.setup
+begin
+  # Embulk ~> 0.8.x
+  Embulk.setup
+rescue NotImplementedError
+  # Embulk ~> 0.9.x
+  require 'embulk/java/bootstrap'
+end
 Embulk.logger = Embulk::Logger.new('/dev/null')
 
 APP_ROOT = File.expand_path('../', __dir__)

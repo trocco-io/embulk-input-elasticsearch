@@ -40,7 +40,7 @@ module Embulk
           when "json"
             value
           else
-            raise "Unsupported type #{field['type']}"
+            raise Elasticsearch::TypecastError.new "Unsupported type #{field['type']}"
           end
         end
       end

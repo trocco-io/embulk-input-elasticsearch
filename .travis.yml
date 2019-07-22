@@ -1,13 +1,17 @@
 language: ruby
-cache: bundler
-rvm:
-  - jruby-9.0.5.0
-  - jruby-9.1.5.0
-  - jruby-head
-jdk:
-  - openjdk7
-before_install:
-  - gem install bundler
+install: ./embulk.jar bundle install --path vendor/bundle
 matrix:
+  include:
+    - env: EMBULK_VERSION=0.9.15
+      rvm: jruby-9.1.5.0 # bundled jruby version
+      jdk: openjdk8 # embulk 0.9.x uses jdk8
+    - env: EMBULK_VERSION=latest
+      rvm: jruby-9.1.5.0 # ?
+      jdk: openjdk8 # ?
   allow_failures:
-    - rvm: jruby-head
+    - env: EMBULK_VERSION=latest
+before_install:
+  - curl -o embulk.jar --create-dirs -L "http://dl.embulk.org/embulk-${EMBULK_VERSION}.jar"
+  - chmod +x embulk.jar
+  - ./embulk.jar gem install bundler
+script: ./embulk.jar bundle exec rake test

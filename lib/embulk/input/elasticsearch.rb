@@ -1,6 +1,7 @@
 require_relative 'elasticsearch/connection'
 require_relative 'elasticsearch/input_thread'
 require_relative 'elasticsearch/converter'
+require_relative 'elasticsearch/error'
 
 module Embulk
   module Input

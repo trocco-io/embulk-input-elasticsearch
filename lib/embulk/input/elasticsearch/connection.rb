@@ -74,7 +74,7 @@ module Embulk
               retry
             end
             msg = "Could not search to Elasticsearch after #{retries} retries. #{e.message}"
-            raise Elasticsearch::ConfigError(e, msg)
+            raise Elasticsearch::ConnectionError.new e, msg
           end
         end
 

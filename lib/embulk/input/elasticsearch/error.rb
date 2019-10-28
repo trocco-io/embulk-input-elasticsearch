@@ -24,6 +24,9 @@ module Embulk
         include Traceable
       end
 
+      class ConnectionError < ConfigError
+      end
+
       class DataError < ::Embulk::DataError
         include Traceable
       end

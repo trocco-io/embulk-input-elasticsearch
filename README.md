@@ -72,6 +72,23 @@ in:
 * json
 * boolean
 
+## test
+
+### setup
+
+```
+curl -o embulk.jar --create-dirs -L "http://dl.embulk.org/embulk-latest.jar"
+chmod +x embulk.jar
+./embulk.jar gem install bundler
+./embulk.jar bundle install --path vendor/bundle
+```
+
+### run test
+
+```
+./embulk.jar bundle exec rake test
+```
+
 ## Build
 
 ```
